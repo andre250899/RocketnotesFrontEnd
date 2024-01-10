@@ -1,3 +1,5 @@
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Container, Links, Content } from'./styles.js';
 
 import { Header } from '../../components/Header';
@@ -5,42 +7,93 @@ import { Button } from '../../components/Button';
 import { Section } from '../../components/Section';
 import { Tag } from '../../components/Tag';
 import { ButtonText } from '../../components/ButtonText';
+import { api } from '../../services/api.js';
 
 export function Details() {
+	const [data, setData] = useState(null);
+
+	const params = useParams();
+	const navigate = useNavigate();
+
+	function handleBack(){
+		navigate(-1);
+	}
+
+	async function handleRemove(){
+		const confirm = window.confirm('Deseja realmente remover a nota?');
+
+		if(confirm){
+			await api.delete(`/notes/${params.id}`);
+			handleBack();
+		}
+	}
+
+	useEffect(() => {
+		async function fetchNote(){
+			const response = await api.get(`/notes/${params.id}`);
+			setData(response.data);
+		}
+
+		fetchNote();
+	}, []);
 
 	return (
 		<Container>
 			<Header/>
+			{
+				data &&
+				<main>
+					<Content>
+						<ButtonText
+						 title='Excluir Nota'
+						 onClick={handleRemove}
+						/>
 
-			<main>
-				<Content>
-					<ButtonText title='Excluir Nota'/>
+						<h1>
+							{data.title}
+						</h1>
 
-					<h1>
-            Introdução ao React
-					</h1>
+						<p>
+							{data.description}
+						</p>
+						{
+							data.links &&
+							<Section title='Links úteis'>
+								<Links>
+									{
+										data.links.map(link => (
+											<li key={String(link.id)}>
+												<a href={link.url} target='_blank' rel='noreferrer'>
+													{link.url}
+												</a>
+											</li>
+										))
+									}
+								</Links>
+							</Section>
+						}
 
-					<p>
-            Mussum Ipsum, cacilds vidis litro abertis. Posuere libero varius. Nullam a nisl ut ante blandit hendrerit. Aenean sit amet nisi. Atirei o pau no gatis, per gatis num morreus. Copo furadis é disculpa de bebadis, arcu quam euismod magna. Si num tem leite então bota uma pinga aí cumpadi!
-            Diuretics paradis num copo é motivis de denguis. Todo mundo vê os porris que eu tomo, mas ninguém vê os tombis que eu levo! Mais vale um bebadis conhecidiss, que um alcoolatra anonimis. Casamentiss faiz malandris se pirulitá.
-            A ordem dos tratores não altera o pão duris. Nullam volutpat risus nec leo commodo, ut interdum diam laoreet. Sed non consequat odio. Per aumento de cachacis, eu reclamis. Nec orci ornare consequat. Praesent lacinia ultrices consectetur. Sed non ipsum felis.
-					</p>
+						{
+							data.tags &&
+							<Section title='Marcadores'>
+								{
+									data.tags.map(tag => (
+										<Tag 
+											key={tag.id} 
+											title={tag.name}
+										/>
+									))
+								}
+							</Section>
+						}
 
-					<Section title='Links úteis'>
-						<Links>
-							<li><a href="#">https://www.rocketseat.com.br</a></li>
-							<li><a href="#">https://www.rocketseat.com.br</a></li>
-						</Links>
-					</Section>
-
-					<Section title='Marcadores'>
-						<Tag title='express'/>
-						<Tag title='node'/>
-					</Section>
-
-					<Button title='Voltar'/>
-				</Content>
-			</main>
+						<Button 
+							title='Voltar'
+							onClick={handleBack}
+						/>
+					</Content>
+				</main>
+			}
 
 		</Container>
 	);
